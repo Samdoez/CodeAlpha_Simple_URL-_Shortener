@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>Url Shortener</title>
+</head>
+
+<body>
+    <div>
+        <form action="/submitLink" method="POST">
+            <input type="text" name="url" id="url" placeholder="Enter your URL here" required>
+            <button type="submit">Shorten URL</button>
+        </form>
+    </div>
+    <% if (locals.error) { %>
+    <p style="color: red; font-size: large;" onclick=""><%= error %></p>
+    <% } else if (locals.shortUrl) { %>
+        <a style="color: green; font-size: large;" href="/redirect" ><%= shortUrl %></a>
+    <% } %>
+</body>
+</html>
