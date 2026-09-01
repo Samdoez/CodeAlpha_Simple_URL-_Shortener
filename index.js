@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
-import crypto from "crypto";
+import crypto, { Verify } from "crypto";
 import axios from "axios";
 
 const app = express();
@@ -41,6 +41,20 @@ app.post("/submitLink", async (req, res) =>{
     const url = req.body.url.trim();
     let length = 6;
 
+    // to check link duplicity and to see if it has been shortened b4
+    const verifyLink = await db.query("SELECT short_code FROM urlshortener WHERE long_url = $1", [url]);
+    if (verifyLink.rows.length > 0){
+
+      const shortCode = verifyLink.rows[0].short_code;
+      console.log(shortCode);
+
+       return res.render("index.ejs", 
+        {error: "This URL has been shortened. no duplicate link allowed, below is the shortened link",
+         shortUrl: `http://localhost:3000/${shortCode}`
+        });
+    }
+
+    //verification of the url after i have confirmed it has no duplicity
     if (url === "") {
        res.render("index.ejs", {error: "Please enter a valid URL."});
     }else if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -63,7 +77,27 @@ app.post("/submitLink", async (req, res) =>{
   }
 });
 
-app.get
+app.get("/:passedcode", async(req, res) =>{
+  try{
+      const code = req.params.passedcode;
+
+      if (code === "favicon.ico") return; // to avoid automatic request tot the browser icon
+
+      const getMappedLink = await db.query("SELECT long_url FROM urlshortener WHERE short_code = $1", [code]);  
+
+      if (getMappedLink.rows.length > 0) {
+      const originalUrl = getMappedLink.rows[0].long_url; //to cappture or retrieve the long link
+      console.log("Found URL:", originalUrl);
+      
+      return res.redirect(originalUrl);
+    } else {
+      return res.status(404).send("Short URL not found.");
+    }
+    } catch (err){
+       console.error("redirecting error, check your code:", err.stack);
+       res.render("index.ejs", {error: "error just occured."});
+    }
+})
 
 app.listen(port, () => {
   console.log(`Server running on port: ${port}`);
